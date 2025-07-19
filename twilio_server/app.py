@@ -4,10 +4,6 @@ import urllib.parse
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 # Import FastAPI and Twilio libraries
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import Response
@@ -16,6 +12,10 @@ from twilio.twiml.voice_response import VoiceResponse
 
 # Import ChromaDB function
 from chromadb_utils.utils import add_document, retrieve_document
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
