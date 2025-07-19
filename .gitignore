@@ -222,3 +222,4 @@ pip-selfcheck.json
 
 # Ignore Chroma DB
 chroma_db/
+chromadb_server/chroma_db/
