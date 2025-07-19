@@ -23,3 +23,4 @@ dependencies = [
 
 [tool.poe.tasks]
 run_chromadb_server = "python chromadb_server/app.py"
+run_twilio_server = "python twilio/app.py"
