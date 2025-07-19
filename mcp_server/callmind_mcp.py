@@ -23,9 +23,9 @@ def query_collection(query: str) -> QueryCollectionResponse:
     (
         x := QueryCollectionResponse(
             result=[
-                transcription[0]
-                for transcription in chroma_result["documents"]
-                if transcription[0] is not None
+                transcription
+                for index, transcription in enumerate(chroma_result["documents"][0])
+                if transcription[0] is not None and chroma_result["distances"][0][index] >= 0.75
             ]
         )
     )
