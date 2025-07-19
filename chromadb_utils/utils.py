@@ -1,9 +1,9 @@
 import os
 from typing import Any, Optional
+from uuid import uuid4
 
 import chromadb
 import chromadb.utils.embedding_functions as embedding_functions
-from chromadbx import UUIDGenerator
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,9 +21,12 @@ collection = client.get_or_create_collection("callmind", embedding_function=goog
 
 
 def add_document(document: str, metadata: Optional[dict[str, Any]] = None):
+    # Generate a single UUID as a list
+    document_id = str(uuid4())
+
     collection.add(
         documents=[document],
-        ids=UUIDGenerator().generate_uuid(),
+        ids=[document_id],
         metadatas=[metadata] if metadata else None,
     )
 

@@ -23,5 +23,5 @@ dependencies = [
 ]
 
 [tool.poe.tasks]
-run_chromadb_server = "python chromadb_server/app.py"
 run_twilio_server = "python twilio/app.py"
+run_mcp_server = "mcp dev mcp_server/callmind_mcp.py"
