@@ -23,4 +23,4 @@ dependencies = [
 
 [tool.poe.tasks]
 run_twilio_server = "python twilio/app.py"
-run_mcp_server = "python mcp_server/callmind_mcp.py"
+run_mcp_server = "mcp dev mcp_server/callmind_mcp.py"
