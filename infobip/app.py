@@ -50,7 +50,9 @@ class TranscriptionData(BaseModel):
 
 
 def make_infobip_api_call(
-    endpoint: str, method: str = "POST", data: Optional[Dict] = None
+    endpoint: str,
+    method: str = "POST",
+    data: Optional[Dict] = None,
 ) -> Optional[Dict]:
     """
     Make an API call to Infobip
