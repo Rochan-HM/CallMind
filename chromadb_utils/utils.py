@@ -3,6 +3,7 @@ import os
 from chromadbx import UUIDGenerator
 import chromadb.utils.embedding_functions as embedding_functions
 from dotenv import load_dotenv
+from typing import Any, Optional
 
 load_dotenv()
 
@@ -18,10 +19,11 @@ google_ef = embedding_functions.GoogleGenerativeAiEmbeddingFunction(
 collection = client.get_or_create_collection("callmind", embedding_function=google_ef)
 
 
-def add_document(document: str):
+def add_document(document: str, metadata: Optional[dict[str, Any]] = None):
     collection.add(
         documents=[document],
         ids=UUIDGenerator().generate_uuid(),
+        metadata=metadata,
     )
 
 
