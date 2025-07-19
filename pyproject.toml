@@ -12,8 +12,16 @@ dependencies = [
     "google-generativeai>=0.8.5",
     "langchain-chroma>=0.1.2",
     "mcp>=1.12.0",
+    "poethepoet>=0.36.0",
     "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",
     "requests>=2.28.0",
+    "python-multipart>=0.0.6",
+    "twilio>=8.0.0",
     "uvicorn>=0.35.0",
+    "chromadbx>=0.0.8",
 ]
+
+[tool.poe.tasks]
+run_chromadb_server = "python chromadb_server/app.py"
+run_twilio_server = "python twilio/app.py"
