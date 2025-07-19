@@ -1,16 +1,21 @@
 import logging
 import os
 import urllib.parse
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
+
+load_dotenv()
+
+# Import FastAPI and Twilio libraries
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import Response
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse
 
-# Load environment variables
-load_dotenv()
+# Import ChromaDB function
+from chromadb_utils.utils import add_document, retrieve_document
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -127,6 +132,40 @@ async def handle_transcription(
         # Log the transcription
         logger.info(f"Transcription for call {CallSid}: {TranscriptionText}")
 
+        # Store in ChromaDB if transcription was successful
+        if TranscriptionStatus.lower() == "completed" and TranscriptionText.strip():
+            try:
+                # Create metadata for the call
+                call_metadata = {
+                    "call_sid": CallSid,
+                    "recording_sid": RecordingSid,
+                    "from_number": From,
+                    "to_number": To,
+                    "transcription_status": TranscriptionStatus,
+                    "recording_url": RecordingUrl,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "source": "twilio_transcription",
+                }
+
+                # Add the transcription to ChromaDB
+                add_document(
+                    document=TranscriptionText,
+                    metadata=call_metadata,  # Pass metadata as a single dict
+                )
+
+                logger.info(
+                    f"Successfully stored transcription for call {CallSid} in ChromaDB"
+                )
+                print(f"✓ Transcription stored in ChromaDB for call {CallSid}")
+
+            except Exception as db_error:
+                logger.error(f"Failed to store transcription in ChromaDB: {db_error}")
+                print(f"✗ Failed to store transcription in ChromaDB: {db_error}")
+        else:
+            logger.info(
+                f"Skipping ChromaDB storage - Status: {TranscriptionStatus}, Text length: {len(TranscriptionText.strip())}"
+            )
+
         return {"status": "success"}
 
     except Exception as e:
@@ -214,6 +253,104 @@ async def health_check():
         "service_status": "running",
     }
     return config_status
+
+
+@app.get("/transcriptions/search")
+async def search_transcriptions(
+    query: str,
+    n_results: int = 5,
+    from_number: Optional[str] = None,
+    to_number: Optional[str] = None,
+):
+    """
+    Search stored transcriptions by content or metadata
+
+    Args:
+        query: Text to search for in transcriptions
+        n_results: Maximum number of results to return
+        from_number: Filter by caller phone number
+        to_number: Filter by called phone number
+    """
+    try:
+        # Build where clause for filtering
+        where_clause = {}
+        if from_number:
+            where_clause["from_number"] = from_number
+        if to_number:
+            where_clause["to_number"] = to_number
+
+        # Search transcriptions
+        results = retrieve_document(
+            query=query,
+            n_results=n_results,
+            where=where_clause if where_clause else None,
+            include=["documents", "metadatas", "distances"],
+        )
+
+        # Format results for response
+        formatted_results = []
+        if results.get("documents") and results["documents"][0]:
+            for i, doc in enumerate(results["documents"][0]):
+                result = {
+                    "transcription": doc,
+                    "metadata": (
+                        results["metadatas"][0][i] if results.get("metadatas") else None
+                    ),
+                    "similarity_score": (
+                        1 - results["distances"][0][i]
+                        if results.get("distances")
+                        else None
+                    ),
+                }
+                formatted_results.append(result)
+
+        return {
+            "query": query,
+            "results_count": len(formatted_results),
+            "results": formatted_results,
+        }
+
+    except Exception as e:
+        logger.error(f"Error searching transcriptions: {e}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
+@app.get("/transcriptions/recent")
+async def get_recent_transcriptions(limit: int = 10):
+    """
+    Get recent transcriptions (simple search with no query)
+    """
+    try:
+        # Get recent transcriptions by searching with a broad query
+        results = retrieve_document(
+            query="call transcription",  # Broad query to match most transcriptions
+            n_results=limit,
+            include=["documents", "metadatas"],
+        )
+
+        # Format results
+        formatted_results = []
+        if results.get("documents") and results["documents"][0]:
+            for i, doc in enumerate(results["documents"][0]):
+                metadata = (
+                    results["metadatas"][0][i] if results.get("metadatas") else None
+                )
+                result = {
+                    "transcription": doc,
+                    "call_sid": metadata.get("call_sid") if metadata else None,
+                    "from_number": metadata.get("from_number") if metadata else None,
+                    "to_number": metadata.get("to_number") if metadata else None,
+                    "timestamp": metadata.get("timestamp") if metadata else None,
+                }
+                formatted_results.append(result)
+
+        return {"results_count": len(formatted_results), "results": formatted_results}
+
+    except Exception as e:
+        logger.error(f"Error getting recent transcriptions: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get transcriptions: {str(e)}"
+        )
 
 
 if __name__ == "__main__":
