@@ -16,6 +16,5 @@ collection = client.get_or_create_collection("callmind")
 def retrieve_document(query: str, **kwargs):
     return collection.query(
         query_texts=[query],
-        n_results=1,
         **kwargs,
     )
