@@ -60,9 +60,7 @@ async def handle_incoming_call(request: Request):
         response = VoiceResponse()
 
         # Greet the caller
-        response.say(
-            "Hello! Your call is being recorded and transcribed. Please speak after the beep."
-        )
+        response.say("Hello! Welcome to CallMind!")
 
         # Record the call with transcription enabled
         # The recording will continue until the caller hangs up or presses #
